@@ -1,0 +1,52 @@
+version: "3.9"
+services:
+  db:
+    # Postgres database with basic image. initializes postgres user and inserts the init script for db seeding 
+    image: postgres
+    restart: always
+    expose:
+      - "5432"
+    environment:
+      - POSTGRES_USER=${PSQL_USER}
+      - POSTGRES_PASSWORD=${PSQL_PASSWORD}
+    volumes:
+      - ./postgres_db/init.sql:/docker-entrypoint-initdb.d/init.sql
+  rabbitmq:
+    # RabbitMQ server for AMPQ facilitation. other services wait for this one by listening on port 15672
+    image: rabbitmq:management
+    command: rabbitmq-server
+    expose:
+      - "5672"
+      - "15672"
+    depends_on:
+      - "db"
+    links:
+      - "db"
+  api:
+    # Flask API for queueing tasks
+    build: ./flask_backend
+    env_file:
+      - ".env"
+    ports:
+      - "5000:5000"
+    depends_on:
+      - "rabbitmq"
+    links: 
+      - "rabbitmq"
+      - "db"
+  celery_worker:
+    # Celery worker for processing queued tasks
+    build: ./flask_backend
+    env_file:
+      - ".env"
+    command: ./wait-for-it.sh rabbitmq:15672 --timeout=35 -- celery -A main.celery worker --hostname=rabbitmq
+    depends_on:
+      - "db"
+      - "rabbitmq"
+    links: 
+      - "rabbitmq"
+      - "db"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+
+      

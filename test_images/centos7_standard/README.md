@@ -1,0 +1,1 @@
+Standard CentOS7 Box with no manually inflicted vulnerabilities

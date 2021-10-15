@@ -1,0 +1,5 @@
+.env
+.postgres_db/*
+
+flask_backend/__pycache__
+flask_backend/.env
