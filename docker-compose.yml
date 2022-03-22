@@ -24,7 +24,7 @@ services:
       - "db"
   api:
     # Flask API for queueing tasks
-    build: ./flask_backend
+    build: ./api
     env_file:
       - ".env"
     ports:
@@ -34,9 +34,12 @@ services:
     links: 
       - "rabbitmq"
       - "db"
+    volumes:
+      - ./test_images:/test_images
+      - /var/run/docker.sock:/var/run/docker.sock
   celery_worker:
     # Celery worker for processing queued tasks
-    build: ./flask_backend
+    build: ./api
     env_file:
       - ".env"
     command: ./wait-for-it.sh rabbitmq:15672 --timeout=35 -- celery -A main.celery worker --hostname=rabbitmq
@@ -47,6 +50,5 @@ services:
       - "rabbitmq"
       - "db"
     volumes:
+      - ./test_images:/test_images
       - /var/run/docker.sock:/var/run/docker.sock
-
-      
